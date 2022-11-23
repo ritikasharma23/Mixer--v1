@@ -34,7 +34,7 @@ describe("Main Contract Tests", () => {
                 .send({ from: accounts[0] });
 
             await mixerContractInstance.methods.depositTokens(erc20ContractInstance.options.address, "1000000000", accounts[1])
-                .send({ from: accounts[0] });
+                .send({ from: accounts[0], value: new BN("10000000000000000") });
 
             // Account0 has deposited into mixer, so balance in contract has increased.
             initialBalanceOfERC20inAcc1InInner = await innerContractInstance.methods.balances(accounts[0], erc20ContractInstance.options.address).call();
@@ -75,7 +75,7 @@ describe("Main Contract Tests", () => {
 
             for (let i = 0; i < 29; i++) {
                 await mixerContractInstance.methods.depositTokens(erc20ContractInstance.options.address, "1000000000", accounts[1])
-                    .send({ from: accounts[0] });
+                    .send({ from: accounts[0], value: new BN("10000000000000000") });
             }
         })
 
@@ -86,7 +86,7 @@ describe("Main Contract Tests", () => {
                 .send({ from: accounts[0] });
 
             await mixerContractInstance.methods.depositTokens(erc20ContractInstance.options.address, "1000000000", accounts[1])
-                .send({ from: accounts[0] });
+                .send({ from: accounts[0], value: new BN("10000000000000000") });
 
             // new inner contract should be created.
             let newInnerContractAddress = await mixerContractInstance.methods.currentContract().call();
