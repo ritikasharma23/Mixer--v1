@@ -27,4 +27,6 @@ contract InnerContract is Ownable {
             ERC20(_erc20Addr).transfer(_to, _numberOfTokens);
         }
     }
+
+    receive() external payable {}
 }

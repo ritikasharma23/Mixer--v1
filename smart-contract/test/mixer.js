@@ -1,4 +1,4 @@
-const { web3 } = require("hardhat");
+const { web3, network } = require("hardhat");
 const { expect } = require("chai");
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 
@@ -23,7 +23,7 @@ describe("Main Contract Tests", () => {
         innerContractInstance = new web3.eth.Contract(innerContractAbi, innerContractAddress);
     });
 
-    context("Deposit and Withdraw", () => {
+    context("Deposit and Withdraw - ERC20", () => {
         it("Deposit into contract", async () => {
             // Account0 has not deposited anything yet to mixer. So it's 0
             let initialBalanceOfERC20inAcc1InInner = await innerContractInstance.methods.balances(accounts[0], erc20ContractInstance.options.address).call();
@@ -47,6 +47,10 @@ describe("Main Contract Tests", () => {
             // increment depositCount of innerContract by 1
             let depositCount = await mixerContractInstance.methods.addressDeposits(innerContractAddress).call();
             expect(depositCount).to.be.bignumber.equal("1");
+
+            // mainContract has taken the fee
+            let nativeTokenBalanceOfMainContract = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            expect(nativeTokenBalanceOfMainContract).to.be.bignumber.equal("10000000000000000");
         });
 
         it("Withdraw from contract", async () => {
@@ -68,7 +72,7 @@ describe("Main Contract Tests", () => {
         });
     })
 
-    context("Deposit a lot", () => {
+    context("Deposit a lot- ERC20", () => {
         it("Deposit 29 more times", async () => {
             await erc20ContractInstance.methods.approve(mixerContractInstance.options.address, "29000000000")
                 .send({ from: accounts[0] });
@@ -77,6 +81,10 @@ describe("Main Contract Tests", () => {
                 await mixerContractInstance.methods.depositTokens(erc20ContractInstance.options.address, "1000000000", accounts[1])
                     .send({ from: accounts[0], value: new BN("10000000000000000") });
             }
+
+            // mainContract has taken the fee
+            let nativeTokenBalanceOfMainContract = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            expect(nativeTokenBalanceOfMainContract).to.be.bignumber.equal((new BN("10000000000000000")).add(new BN("290000000000000000")));
         })
 
         it("If deposit now, should create new InnerContract", async () => {
@@ -97,6 +105,55 @@ describe("Main Contract Tests", () => {
 
             depositCount = await mixerContractInstance.methods.addressDeposits(newInnerContractAddress).call();
             expect(depositCount).to.be.bignumber.equal("1");
+
+            // mainContract has taken the fee
+            let nativeTokenBalanceOfMainContract = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            expect(nativeTokenBalanceOfMainContract).to.be.bignumber.equal((new BN("300000000000000000")).add(new BN("10000000000000000")));
+
+            // update innerContract variables
+            innerContractAddress = newInnerContractAddress;
+            innerContractInstance = new web3.eth.Contract(innerContractAbi, innerContractAddress);
+        })
+    })
+
+    context("Deposit and Withdraw - Native token", () => {
+        it("Deposit into contract", async () => {
+            let initialAccBalance = await network.provider.send("eth_getBalance", [accounts[0]]);
+            let initialMainContractBalance = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            let initialInnerContractBalance = await network.provider.send("eth_getBalance", [innerContractInstance.options.address]);
+
+            expect(initialInnerContractBalance).to.be.bignumber.equal("0");
+
+            await mixerContractInstance.methods.depositTokens(constants.ZERO_ADDRESS, "2000000000000000000", accounts[1])
+                .send({ from: accounts[0], value: new BN("10000000000000000").add(new BN("2000000000000000000")) });
+
+            let newAccBalance = await network.provider.send("eth_getBalance", [accounts[0]]);
+            let newMainContractBalance = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            let newInnerContractBalance = await network.provider.send("eth_getBalance", [innerContractInstance.options.address]);
+
+            expect(initialAccBalance).to.be.bignumber.greaterThan(newAccBalance);
+            expect(newMainContractBalance).to.be.bignumber.equal(new BN(initialMainContractBalance).add(new BN("10000000000000000")));
+            expect(newInnerContractBalance).to.be.bignumber.equal(new BN("2000000000000000000"));
+        })
+
+        it("Withdraw from contract", async () => {
+            let initialAcc1Balance = await network.provider.send("eth_getBalance", [accounts[1]]);
+            let initialMainContractBalance = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            let initialInnerContractBalance = await network.provider.send("eth_getBalance", [innerContractInstance.options.address]);
+
+            expect(initialInnerContractBalance).to.be.bignumber.equal(new BN("2000000000000000000"));
+
+            // tokens are being withdrawn
+            await mixerContractInstance.methods.withdraw(innerContractAddress, constants.ZERO_ADDRESS, "2000000000000000000", accounts[1])
+                .send({ from: accounts[0] });
+
+            let newAcc1Balance = await network.provider.send("eth_getBalance", [accounts[1]]);
+            let newMainContractBalance = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            let newInnerContractBalance = await network.provider.send("eth_getBalance", [innerContractInstance.options.address]);
+
+            expect(newAcc1Balance).to.be.bignumber.equal(new BN(initialAcc1Balance).add(new BN("2000000000000000000")));
+            expect(newMainContractBalance).to.be.bignumber.equal(initialMainContractBalance);
+            expect(newInnerContractBalance).to.be.bignumber.equal("0");
         })
     })
 })
