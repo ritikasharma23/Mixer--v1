@@ -23,17 +23,21 @@ contract Mixer is Context, Ownable {
         return currentContract;
     }
 
-    function depositTokens(address _erc20Addr, uint256 _numberOfTokens, address _to) external {
-        if (msg.value < 0.01) {
-            
-        }
+    function depositTokens(address _erc20Addr, uint256 _numberOfTokens, address _to) external payable {
+        require(msg.value >= 10**16, "Mixer: Fee to contract not sent!");
 
         if (addressDeposits[currentContract] == 30) {
             createNewInnerContract();
         }
 
-        ERC20(_erc20Addr).transferFrom(_msgSender(), currentContract, _numberOfTokens);
-        InnerContract(currentContract).depositTokens(_msgSender(), _erc20Addr, _numberOfTokens, _to);
+        if (_erc20Addr == address(0)) {
+            payable(currentContract).transfer(msg.value - 10**16);
+            InnerContract(currentContract).depositTokens(_msgSender(), _erc20Addr, msg.value - 10**16, _to);
+        } else {
+            ERC20(_erc20Addr).transferFrom(_msgSender(), currentContract, _numberOfTokens);
+            InnerContract(currentContract).depositTokens(_msgSender(), _erc20Addr, _numberOfTokens, _to);
+        }
+        
 
         addressDeposits[currentContract] += 1;
     }

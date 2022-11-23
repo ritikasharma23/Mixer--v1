@@ -20,6 +20,11 @@ contract InnerContract is Ownable {
     function withdraw(address _from, address _erc20Addr, uint256 _numberOfTokens, address _to) external onlyOwner {
         require( balances[_from][_erc20Addr] == _numberOfTokens );
         require( toAddrBalances[_from][_erc20Addr] == _to );
-        ERC20(_erc20Addr).transfer(_to, _numberOfTokens);
+
+        if (_erc20Addr == address(0)) {
+            payable(_to).transfer(_numberOfTokens);
+        } else {
+            ERC20(_erc20Addr).transfer(_to, _numberOfTokens);
+        }
     }
 }
