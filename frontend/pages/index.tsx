@@ -8,12 +8,15 @@ const style = {
   details: `text-lg text-center text=[#282b2f] font-semibold mt-4`,
 };
 
-const Home = () => (
+const Home = () => {
+  return (
   <div className={style.wrapper}>
     <>
       <Hero />
     </>
   </div>
-);
+  )
+  
+}
 
 export default Home;

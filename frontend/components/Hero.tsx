@@ -37,6 +37,7 @@ const defaults = {
 const Pay = () => {
   //const { chain, chains } = useNetwork();
   const [availableTokens, setAvailableTokens] = useState<TokenInfo[]>([]);
+  const [tokenAddr,setTokenAddr]= useState<string>()
   const [selectedOption, setSelectedOption] = useState<string>();
   const [balanceToken, setBalanceToken] = useState(defaults.balanceToken);
   const [formInput, updateFormInput] = useState({
@@ -101,7 +102,14 @@ const Pay = () => {
       PhoneLink.abi,
       signer
     );
-    const tx = await contract.deposit(formInput?.target, formInput?.amount);
+    var tx
+    const etherPrice = ethers.utils.parseUnits(formInput?.amount.toString(), 'ether')
+    if(tokenAddr==='null'){
+      tx = await contract.depositTokens("0x0000000000000000000000000000000000000000",0,formInput?.target, {value:etherPrice});
+    }else{
+      tx = await contract.depositTokens(tokenAddr,formInput?.amount,formInput?.target);
+    }
+    
     const receipt = await provider
       .waitForTransaction(tx.hash, 1, 150000)
       .then(async () => {
@@ -154,6 +162,7 @@ const Pay = () => {
                           if (selectedValue) {
                             token = availableTokens[Number(selectedValue)];
                             setSelectedOption(token.name);
+                            setTokenAddr(token.address)
                           }
                           //await loadBalance(token);
                         }}
