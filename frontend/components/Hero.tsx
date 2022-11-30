@@ -3,7 +3,7 @@ import { getTokenByChain, TokenInfo } from "../assets/tokenConfig";
 import { useAccount, useNetwork } from "wagmi";
 import BusyLoader, { LoaderType } from "../components/BusyLoader";
 import { FaBackspace, FaMoneyBillWave } from "react-icons/fa";
-import PhoneLink from "../artifacts/contracts/phoneLink.sol/phoneLink.json";
+import Mixer from "../artifacts/contracts/Mixer.sol/mixer.json";
 import toast from "react-hot-toast";
 import InputIcon from "../components/InputIcon";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -98,8 +98,8 @@ const Pay = () => {
     const signer = provider.getSigner();
     const network = await provider.getNetwork();
     const contract = new ethers.Contract(
-      getConfigByChain(network?.chainId)[0].contractProxyAddress,
-      PhoneLink.abi,
+      getConfigByChain(network?.chainId)[0].mixerAddress,
+      Mixer,
       signer
     );
     var tx
