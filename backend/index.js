@@ -31,15 +31,54 @@ app.use(cors())
 
 //routes
 
+app.get("/get/balance/:myaddress/:crypto", async (req, res) => {
+    const query = '*[_type == "txTracker" && to == $walletAddress && coin == $coin && status == $status] {amount}'
+    const params = { walletAddress: req.params.myaddress, status: 'pending', coin: req.params.crypto }
+    const result = await client.fetch(query, params)
+    const summary = result.length != 0 ? result.map(bal => bal.amount).reduce((acc, bal) => bal + acc) : 0;
+    res.send({ result: summary })
+})
+
+app.get("/get/data/:myaddress/:crypto", async (req, res) => {
+    const query = '*[_type == "txTracker" && to == $walletAddress && coin == $coin && status == $status] {from,contract,amount,coin}'
+    const params = { walletAddress: req.params.myaddress, status: 'pending', coin: req.params.crypto }
+    const result = await client.fetch(query, params)
+    res.send(result)
+})
+
+app.put("/update/status/:myaddress/:crypto", async (req, res) => {
+    const query = '*[_type == "txTracker" && to == $walletAddress && coin == $coin && status == $status] {_id,from,contract,amount,coin}'
+    const params = { walletAddress: req.params.myaddress, status: 'pending', coin: req.params.crypto }
+
+    const out = await client.fetch(query, params)
+
+    out.map((e) => {
+        console.log("data is", e)
+        const result = client.patch(e._id)
+            .set({ 'status': 'paid' })
+            .commit()
+            .then(res.send("Withdrawal successfully completed."))
+            .catch(e => `Error is: ${e}`)
+    })
+})
+
+async function clearFields() {
+    const query = '*[_type == "txTracker"]';
+    //const params = { status: 'no', date: Number(((new Date().getTime()) / 1000).toFixed(0)) }
+    const result = await client.delete({ query })
+}
+
 app.post("/save/trnx/", async (req, res) => {
-    const { from, to, coin, amount } = req.body
+    const { from, to, coin, contract, amount, status } = req.body
     const userDoc = {
         _type: "txTracker",
-        _id: new Date(),
-        from: from,
-        to: to,
+        _id: Date.now(),
+        from: from.toLowerCase(),
+        to: to.toLowerCase(),
         coin: coin,
+        contract: contract.toLowerCase(),
         amount: amount,
+        status: status,
     };
     try {
         const result = await client.create(userDoc);
@@ -137,5 +176,10 @@ app.post("/save/trnx/", async (req, res) => {
 
 
 //listen
+const POLLING_INTERVAL = 5000; // 5 Seconds, business can edit
+setTimeout(async () => {
+    //uncomment this line to reset the entire database
+    //clearFields()
+}, POLLING_INTERVAL);
 
 app.listen(8284, () => console.log('Listening at 8284'))

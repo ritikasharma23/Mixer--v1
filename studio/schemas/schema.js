@@ -28,6 +28,11 @@ export default createSchema({
           type: 'string'
         },
         {
+          name: 'contract',
+          title: 'Contract',
+          type: 'string',
+        },
+        {
           name: 'coin',
           title: 'Crypto',
           type: 'string'
@@ -36,6 +41,11 @@ export default createSchema({
           name: 'amount',
           title: 'Amount',
           type: 'number'
+        },
+        {
+          name: 'status',
+          title: 'Status',
+          type: 'string'
         }
       ]
     },

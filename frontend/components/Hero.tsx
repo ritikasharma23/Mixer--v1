@@ -3,7 +3,7 @@ import { getTokenByChain, TokenInfo } from "../assets/tokenConfig";
 import { useAccount, useNetwork } from "wagmi";
 import BusyLoader, { LoaderType } from "../components/BusyLoader";
 import { FaBackspace, FaMoneyBillWave } from "react-icons/fa";
-import Mixer from "../artifacts/contracts/Mixer.sol/mixer.json";
+import Mixer from "../artifacts/contracts/Mixer.sol/Mixer.json";
 import toast from "react-hot-toast";
 import InputIcon from "../components/InputIcon";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -27,7 +27,7 @@ const style = {
   nftButton: `font-bold w-full mt-4 bg-[#43058f] text-white text-lg rounded-xl p-3  shadow-lg hover:bg-[#6f41b7] cursor-pointer`,
   dropDown: `font-bold w-full mt-4 bg-[#2181e2] text-white text-sm lg:text-lg rounded p-4 shadow-sm cursor-pointer`,
   option: `font-bold w-1/2 lg:w-full mt-4 bg-[#2181e2] text-white text-sm lg:text-lg rounded p-4 shadow-lg cursor-pointer`,
-  glowDivBox: `relative group w-full lg:w-[40%] mt-30 rounded-2xl `,
+  glowDivBox: `relative group w-full lg:w-[40%] mt-30 rounded-2xl mr-2 `,
 };
 
 const defaults = {
@@ -37,7 +37,7 @@ const defaults = {
 const Pay = () => {
   //const { chain, chains } = useNetwork();
   const [availableTokens, setAvailableTokens] = useState<TokenInfo[]>([]);
-  const [tokenAddr,setTokenAddr]= useState<string>()
+  const [tokenAddr, setTokenAddr] = useState<string>();
   const [selectedOption, setSelectedOption] = useState<string>();
   const [balanceToken, setBalanceToken] = useState(defaults.balanceToken);
   const [formInput, updateFormInput] = useState({
@@ -67,12 +67,19 @@ const Pay = () => {
     setCurrNet(network?.chainId);
   };
 
-  const saveTransaction = async () => {
+  const saveTransaction = async (innerContract: any) => {
+    await (window as any).ethereum.send("eth_requestAccounts"); // opens up metamask extension and connects Web2 to Web3
+    const accounts = await (window as any).ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    const myAddress = accounts[0];
     const body = {
-      from: defaultAccount,
+      from: myAddress,
       to: formInput?.target,
       coin: selectedOption,
+      contract: innerContract,
       amount: formInput?.amount,
+      status: "pending",
     };
     const headers = { "Content-Type": "application/json" };
 
@@ -88,10 +95,106 @@ const Pay = () => {
       .catch((e) => console.log("error is", e));
   };
 
+  async function getMyBalance() {
+    toast.success(`Balance: ${await getBalance()}`);
+  }
+
+  async function getBalance() {
+    const accounts = await (window as any).ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    const myAddress = accounts[0];
+    var balance;
+    await fetch(
+      `http://localhost:8284/get/balance/${myAddress}/${selectedOption}`
+    )
+      .then(async (result) => {
+        await result.json().then((resp) => {
+          balance = resp.result;
+        });
+      })
+      .catch((e) => {
+        toast.error(`Error is ${e}`);
+      });
+    return balance;
+  }
+
+  async function withdraw(e: any) {
+    e?.preventDefault();
+    const balance = await getBalance();
+
+    if (balance === 0) {
+      toast.error(`Nothing to withdraw for you`);
+    } else {
+      await (window as any).ethereum.send("eth_requestAccounts"); // opens up metamask extension and connects Web2 to Web3
+      const accounts = await (window as any).ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      const myAddress = accounts[0];
+      const provider = new ethers.providers.Web3Provider(
+        (window as any).ethereum
+      ); //create provider
+      const signer = provider.getSigner();
+      const network = await provider.getNetwork();
+      const contract = new ethers.Contract(
+        getConfigByChain(network?.chainId)[0].mixerAddress,
+        Mixer.abi,
+        signer
+      );
+      var tx;
+
+      await fetch(
+        `http://localhost:8284/get/data/${myAddress}/${selectedOption}`
+      )
+        .then(async (result) => {
+          await result.json().then((resp) => {
+            resp.map(async (e: any) => {
+              if (tokenAddr === "null") {
+                tx = await contract.withdraw(
+                  e.contract,
+                  "0x0000000000000000000000000000000000000000",
+                  ethers.utils.parseUnits(e.amount.toString(), "ether"),
+                  e.from
+                  //,{ value: etherPrice }
+                );
+              } else {
+                tx = await contract.withdraw(
+                  e.contract,
+                  tokenAddr,
+                  ethers.utils.parseUnits(e.amount.toString(), "ether"),
+                  e.from
+                );
+              }
+              await fetch(
+                `http://localhost:8284/update/status/${myAddress}/${selectedOption}`
+              );
+            });
+          });
+        })
+        .catch((e) => {
+          toast.error(`Error is ${e}`);
+        });
+
+      // const receipt = await provider
+      //   .waitForTransaction(tx.hash, 1, 150000)
+      //   .then(async () => {
+      //     toast.success("Withdrawal completed !!");
+      //   })
+      //   .catch((e) => {
+      //     toast.error("Transaction failed.");
+      //     toast.error(`Error is: ${e}`);
+      //   });
+    }
+  }
+
   async function transfer(e: any) {
     e?.preventDefault();
-    await saveTransaction();
+
     await (window as any).ethereum.send("eth_requestAccounts"); // opens up metamask extension and connects Web2 to Web3
+    const accounts = await (window as any).ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    const myAddress = accounts[0];
     const provider = new ethers.providers.Web3Provider(
       (window as any).ethereum
     ); //create provider
@@ -99,23 +202,38 @@ const Pay = () => {
     const network = await provider.getNetwork();
     const contract = new ethers.Contract(
       getConfigByChain(network?.chainId)[0].mixerAddress,
-      Mixer,
+      Mixer.abi,
       signer
     );
-    var tx
-    const etherPrice = ethers.utils.parseUnits(formInput?.amount.toString(), 'ether')
-    if(tokenAddr==='null'){
-      tx = await contract.depositTokens("0x0000000000000000000000000000000000000000",0,formInput?.target, {value:etherPrice});
-    }else{
-      tx = await contract.depositTokens(tokenAddr,formInput?.amount,formInput?.target);
+    var tx;
+    const innerContract = await contract.getCurrentContract();
+    const etherPrice = ethers.utils.parseUnits(
+      formInput?.amount.toString(),
+      "ether"
+    );
+    if (tokenAddr === "null") {
+      tx = await contract.depositTokens(
+        "0x0000000000000000000000000000000000000000",
+        0,
+        formInput?.target,
+        { value: etherPrice }
+      );
+    } else {
+      tx = await contract.depositTokens(
+        tokenAddr,
+        formInput?.amount,
+        formInput?.target
+      );
     }
-    
+
     const receipt = await provider
       .waitForTransaction(tx.hash, 1, 150000)
       .then(async () => {
         toast.success("Transfer completed !!");
-      }).catch((e)=>{
-        toast.error("Transaction failed.")
+        await saveTransaction(innerContract as any);
+      })
+      .catch((e) => {
+        toast.error("Transaction failed.");
         toast.error(`Error is: ${e}`);
       });
   }
@@ -136,7 +254,7 @@ const Pay = () => {
                     <div className={style.details}>
                       <span className="flex flex-wrap justify-center space-x-5">
                         <span className="pr-6 text-xl font-bold text-black lg:text-3xl">
-                          Send Crypto
+                          Deposit Crypto
                         </span>
                       </span>
                       <span className="flex flex-wrap items-center justify-center space-x-5">
@@ -162,12 +280,12 @@ const Pay = () => {
                           if (selectedValue) {
                             token = availableTokens[Number(selectedValue)];
                             setSelectedOption(token.name);
-                            setTokenAddr(token.address)
+                            setTokenAddr(token.address);
                           }
                           //await loadBalance(token);
                         }}
                       >
-                        {availableTokens.map(
+                        {availableTokens?.map(
                           (token: TokenInfo, index: number) => (
                             <option
                               className={style.option}
@@ -268,12 +386,98 @@ const Pay = () => {
                           onClick={transfer}
                           className={style.nftButton}
                         >
-                          Transfer
+                          Deposit
                         </button>
                       )}
                     </div>
                   </>
                 )}
+              </div>
+            </div>
+
+            <div className={style.glowDivBox}>
+              <div className="relative h-[full] w-[95%] justify-center rounded-lg bg-gradient-to-b from-purple-300 to-blue-200 px-7 py-9  text-center leading-none lg:w-full">
+                <>
+                  <div className={style.details}>
+                    <span className="flex flex-wrap justify-center space-x-5">
+                      <span className="pr-6 text-xl font-bold text-black lg:text-3xl">
+                        Withdraw Crypto
+                      </span>
+                    </span>
+                    <span className="flex flex-wrap items-center justify-center space-x-5">
+                      <span className="mt-4 mb-3 justify-center text-center font-sans text-base not-italic leading-5 text-[#111111]">
+                        Withdraw your funds to your wallet
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="font-bold drop-shadow-xl">
+                    <div className={style.info}>
+                      <div className={style.infoLeft}>
+                        <div className="mt-4 mb-2 text-sm font-normal text-[#000000]">
+                          Choose Cryptocurrency:
+                        </div>
+                      </div>
+                    </div>
+                    <select
+                      className={style.dropDown}
+                      onChange={async (e) => {
+                        const selectedValue = Number(e.target.value);
+                        let token: TokenInfo | undefined;
+                        if (selectedValue) {
+                          token = availableTokens[Number(selectedValue)];
+                          setSelectedOption(token.name);
+                          setTokenAddr(token.address);
+                        }
+                        //await loadBalance(token);
+                      }}
+                    >
+                      {availableTokens?.map(
+                        (token: TokenInfo, index: number) => (
+                          <option
+                            className={style.option}
+                            value={index}
+                            key={token.address}
+                          >
+                            {token.name}
+                          </option>
+                        )
+                      )}
+                    </select>
+
+                    {loadingState === true ? (
+                      <BusyLoader
+                        loaderType={LoaderType.Beat}
+                        wrapperClass="white-busy-container"
+                        className="white-busy-container"
+                        color={"#000000"}
+                        size={15}
+                      >
+                        <div className={style.description}>
+                          {" "}
+                          Connecting to blockchain. Please wait
+                        </div>
+                      </BusyLoader>
+                    ) : (
+                      <>
+                        <button
+                          type="submit"
+                          onClick={getMyBalance}
+                          className={style.nftButton}
+                        >
+                          Check Balance
+                        </button>
+                        <button
+                          type="submit"
+                          onClick={withdraw}
+                          className={style.nftButton}
+                        >
+                          Withdraw
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
               </div>
             </div>
           </div>

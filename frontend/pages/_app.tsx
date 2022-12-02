@@ -85,7 +85,12 @@ const Kardiachain_mainnet: Chain = {
 };
 
 const { chains, provider } = configureChains(
-  [Kardiachain_mainnet, Kardiachain_testNet, chain.polygon],
+  [
+    Kardiachain_mainnet,
+    Kardiachain_testNet,
+    chain.polygon,
+    chain.polygonMumbai,
+  ],
   [jsonRpcProvider({ rpc: (chain) => ({ http: chain.rpcUrls.default }) })]
 );
 

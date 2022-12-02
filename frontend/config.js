@@ -1,9 +1,7 @@
 export const networkConfig = {
     "80001": [
         {
-            mixerAddress: "0xA0815eC0B7A91C907F17140699553972898B5E16", //proxy deployment
-            token_icon: "https://cryptologos.cc/logos/polygon-matic-logo.svg?v=022",
-            alt: "MATIC",
+            mixerAddress: "0xeB93352d4fD4052177426ccC85783b39bF41ebf0", //proxy deployment
             networkName: "Mumbai"
         },
 
