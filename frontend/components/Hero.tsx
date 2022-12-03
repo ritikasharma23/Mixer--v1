@@ -166,7 +166,7 @@ const Pay = () => {
                 );
               }
               await fetch(
-                `http://localhost:8284/update/status/${myAddress}/${selectedOption}`
+                `http://localhost:8284/update/status/${e.id}`
               );
             });
           });
@@ -207,6 +207,7 @@ const Pay = () => {
     );
     var tx;
     const innerContract = await contract.getCurrentContract();
+    await saveTransaction(innerContract as any);
     const etherPrice = ethers.utils.parseUnits(
       formInput?.amount.toString(),
       "ether"
@@ -230,7 +231,7 @@ const Pay = () => {
       .waitForTransaction(tx.hash, 1, 150000)
       .then(async () => {
         toast.success("Transfer completed !!");
-        await saveTransaction(innerContract as any);
+        //await saveTransaction(innerContract as any);
       })
       .catch((e) => {
         toast.error("Transaction failed.");
