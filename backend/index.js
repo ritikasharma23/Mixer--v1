@@ -40,26 +40,24 @@ app.get("/get/balance/:myaddress/:crypto", async (req, res) => {
 })
 
 app.get("/get/data/:myaddress/:crypto", async (req, res) => {
-    const query = '*[_type == "txTracker" && to == $walletAddress && coin == $coin && status == $status] {from,contract,amount,coin}'
+    const query = '*[_type == "txTracker" && to == $walletAddress && coin == $coin && status == $status] {_id,from,contract,amount,coin}'
     const params = { walletAddress: req.params.myaddress, status: 'pending', coin: req.params.crypto }
     const result = await client.fetch(query, params)
     res.send(result)
 })
 
-app.put("/update/status/:myaddress/:crypto", async (req, res) => {
-    const query = '*[_type == "txTracker" && to == $walletAddress && coin == $coin && status == $status] {_id,from,contract,amount,coin}'
-    const params = { walletAddress: req.params.myaddress, status: 'pending', coin: req.params.crypto }
+app.put("/update/status/:id", async (req, res) => {
+    // const query = '*[_type == "txTracker" && _id == $id] {_id,from,contract,amount,coin}'
+    // const params = { id: req.params.id}
+    // const out = await client.fetch(query, params)
+    // const id = out[0]._id
 
-    const out = await client.fetch(query, params)
+    await client.patch(req.params.id)
+        .set({ 'status': 'paid' })
+        .commit()
+        .then(res.send("Withdrawal successfully completed."))
+        .catch(e => `Error is: ${e}`)
 
-    out.map((e) => {
-        console.log("data is", e)
-        const result = client.patch(e._id)
-            .set({ 'status': 'paid' })
-            .commit()
-            .then(res.send("Withdrawal successfully completed."))
-            .catch(e => `Error is: ${e}`)
-    })
 })
 
 async function clearFields() {
