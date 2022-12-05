@@ -156,4 +156,22 @@ describe("Main Contract Tests", () => {
             expect(newInnerContractBalance).to.be.bignumber.equal("0");
         })
     })
+
+    context("Deposit a lot- Native token", () => {
+        it("Deposit 29 more times", async () => {
+            let initialNativeTokenBalanceOfMainContract = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+
+            for (let i = 0; i < 29; i++) {
+                await mixerContractInstance.methods.depositTokens(constants.ZERO_ADDRESS, "2000000000000000000", accounts[1])
+                .send({ from: accounts[0], value: new BN("10000000000000000").add(new BN("2000000000000000000")) });
+            }
+
+            // mainContract has taken the fee and tokens
+            let newNativeTokenBalanceOfMainContract = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            expect(newNativeTokenBalanceOfMainContract).to.be.bignumber.equal(
+                new BN(initialNativeTokenBalanceOfMainContract)
+                    .add( new BN(29).mul( new BN("10000000000000000") ) ) // fee
+            );
+        })
+    })
 })
