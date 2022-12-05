@@ -59,8 +59,8 @@ describe("Main Contract Tests", () => {
             expect(balanceOfInnerContractOfERC20).to.be.bignumber.equal("1000000000");
 
             // tokens are being withdrawn
-            await mixerContractInstance.methods.withdraw(innerContractAddress, erc20ContractInstance.options.address, "1000000000", accounts[1])
-                .send({ from: accounts[0] });
+            await mixerContractInstance.methods.withdraw(innerContractAddress, erc20ContractInstance.options.address, "1000000000", accounts[0], accounts[1])
+                .send({ from: accounts[1] });
 
             // since tokens have been withdrawn, tokens have been transfered.
             let balanceofERC20inAcc1 = await erc20ContractInstance.methods.balanceOf(accounts[1]).call();
@@ -144,7 +144,7 @@ describe("Main Contract Tests", () => {
             expect(initialInnerContractBalance).to.be.bignumber.equal(new BN("2000000000000000000"));
 
             // tokens are being withdrawn
-            await mixerContractInstance.methods.withdraw(innerContractAddress, constants.ZERO_ADDRESS, "2000000000000000000", accounts[1])
+            await mixerContractInstance.methods.withdraw(innerContractAddress, constants.ZERO_ADDRESS, "2000000000000000000", accounts[0], accounts[1])
                 .send({ from: accounts[0] });
 
             let newAcc1Balance = await network.provider.send("eth_getBalance", [accounts[1]]);

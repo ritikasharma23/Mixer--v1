@@ -43,8 +43,8 @@ contract Mixer is Initializable, ContextUpgradeable, OwnableUpgradeable {
         addressDeposits[currentContract] += 1;
     }
 
-    function withdraw(address _contractAddress, address _erc20Addr, uint256 _numberOfTokens, address _to) external {
-        InnerContract(payable(_contractAddress)).withdraw(_msgSender(), _erc20Addr, _numberOfTokens, _to);
+    function withdraw(address _contractAddress, address _erc20Addr, uint256 _numberOfTokens, address _from, address _to) external {
+        InnerContract(payable(_contractAddress)).withdraw(_from, _erc20Addr, _numberOfTokens, _to);
     }
 
     receive() external payable {
