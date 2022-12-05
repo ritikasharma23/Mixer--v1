@@ -3,17 +3,19 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import "./innerContract.sol";
 
-contract Mixer is Context, Ownable {
+contract Mixer is Initializable, ContextUpgradeable, OwnableUpgradeable {
     mapping(address => uint8) public addressDeposits;
     address payable public currentContract;
 
     event NewInnerContractCreated(address);
 
-    constructor() {
+    constructor() initializer {
+        __Ownable_init();
         createNewInnerContract();
     }
 
@@ -41,7 +43,7 @@ contract Mixer is Context, Ownable {
         addressDeposits[currentContract] += 1;
     }
 
-    function withdraw(address _contractAddress, address _erc20Addr, uint256 _numberOfTokens, address _to) external onlyOwner {
+    function withdraw(address _contractAddress, address _erc20Addr, uint256 _numberOfTokens, address _to) external {
         InnerContract(payable(_contractAddress)).withdraw(_msgSender(), _erc20Addr, _numberOfTokens, _to);
     }
 
