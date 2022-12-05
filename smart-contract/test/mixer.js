@@ -158,20 +158,48 @@ describe("Main Contract Tests", () => {
     })
 
     context("Deposit a lot- Native token", () => {
-        it("Deposit 29 more times", async () => {
+        it("Deposit 28 more times", async () => {
             let initialNativeTokenBalanceOfMainContract = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
+            let initialNativeTokenBalanceOfInnerContract = await network.provider.send("eth_getBalance", [innerContractInstance.options.address]);
 
-            for (let i = 0; i < 29; i++) {
+            for (let i = 0; i < 28; i++) {
                 await mixerContractInstance.methods.depositTokens(constants.ZERO_ADDRESS, "2000000000000000000", accounts[1])
-                .send({ from: accounts[0], value: new BN("10000000000000000").add(new BN("2000000000000000000")) });
+                    .send({ from: accounts[0], value: new BN("10000000000000000").add(new BN("2000000000000000000")) });
             }
 
             // mainContract has taken the fee and tokens
             let newNativeTokenBalanceOfMainContract = await network.provider.send("eth_getBalance", [mixerContractInstance.options.address]);
             expect(newNativeTokenBalanceOfMainContract).to.be.bignumber.equal(
                 new BN(initialNativeTokenBalanceOfMainContract)
-                    .add( new BN(29).mul( new BN("10000000000000000") ) ) // fee
+                    .add(new BN(28).mul(new BN("10000000000000000"))) // fee
             );
+
+            let newNativeTokenBalanceOfInnerContract = await network.provider.send("eth_getBalance", [innerContractInstance.options.address]);
+            expect(newNativeTokenBalanceOfInnerContract).to.be.bignumber.equal(
+                new BN(initialNativeTokenBalanceOfInnerContract)
+                    .add(new BN(28).mul(new BN("2000000000000000000"))) // tokens deposited
+            );
+        })
+
+        it("If deposit now, should create new InnerContract", async () => {
+            let initialInnerContractAddress = await mixerContractInstance.methods.currentContract().call();
+
+            await mixerContractInstance.methods.depositTokens(constants.ZERO_ADDRESS, "2000000000000000000", accounts[1])
+                .send({ from: accounts[0], value: new BN("10000000000000000").add(new BN("2000000000000000000")) });
+
+            // new inner contract should be created.
+            let newInnerContractAddress = await mixerContractInstance.methods.currentContract().call();
+            expect(newInnerContractAddress).to.not.equal(initialInnerContractAddress);
+
+            let depositCount = await mixerContractInstance.methods.addressDeposits(initialInnerContractAddress).call();
+            expect(depositCount).to.be.bignumber.equal("30");
+
+            depositCount = await mixerContractInstance.methods.addressDeposits(newInnerContractAddress).call();
+            expect(depositCount).to.be.bignumber.equal("1");
+
+            // update innerContract variables
+            innerContractAddress = newInnerContractAddress;
+            innerContractInstance = new web3.eth.Contract(innerContractAbi, innerContractAddress);
         })
     })
 })
