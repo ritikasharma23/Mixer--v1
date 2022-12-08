@@ -47,6 +47,7 @@ const Pay = () => {
   const [loadingState, setLoadingState] = useState<Boolean>(false);
   const [defaultAccount, setDefaultAccount] = useState<any>(null);
   const [currNet, setCurrNet] = useState<number>(0);
+  const fee: number = 0.01;
 
   useEffect(() => {
     onLoad();
@@ -165,9 +166,7 @@ const Pay = () => {
                   e.from
                 );
               }
-              await fetch(
-                `http://localhost:8284/update/status/${e.id}`
-              );
+              await fetch(`http://localhost:8284/update/status/${e.id}`);
             });
           });
         })
@@ -208,11 +207,10 @@ const Pay = () => {
     var tx;
     const innerContract = await contract.getCurrentContract();
     //await saveTransaction(innerContract as any);
-    const etherPrice = ethers.utils.parseUnits(
-      formInput?.amount.toString(),
-      "ether"
-    );
+
     if (tokenAddr === "null") {
+      const val: number = Number(formInput?.amount) + fee;
+      const etherPrice = ethers.utils.parseUnits(val.toString(), "ether");
       tx = await contract.depositTokens(
         "0x0000000000000000000000000000000000000000",
         0,
@@ -220,10 +218,12 @@ const Pay = () => {
         { value: etherPrice }
       );
     } else {
+      const etherPrice = ethers.utils.parseUnits(fee.toString(), "ether");
       tx = await contract.depositTokens(
         tokenAddr,
         formInput?.amount,
-        formInput?.target
+        formInput?.target,
+        { value: etherPrice }
       );
     }
 
