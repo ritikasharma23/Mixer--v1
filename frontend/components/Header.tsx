@@ -55,10 +55,10 @@ const solutions = [
 const style = {
   wrapper: `flex flex-wrap items-end content-around bg-[#E6cf7c] px-[1.2rem] p-1 `,
   logoContainer: `flex items-center lg:py-4 flex-shrink-0 text-[#000000] mr-6 cursor-pointer`,
-  logoText: ` ml-[0.8rem] font-semibold text-2xl tracking-tight text-[#000000]`,
+  logoText: ` ml-[3.8rem] mt-10 font-bold text-2xl tracking-tight text-[#000000]`,
   headerItemsTab: `w-full  block flex-grow lg:flex lg:items-center lg:w-auto`,
   headerItems: `text-md lg:flex justify-end items-center font-bold lg:flex-grow`,
-  headerItem: `block mt-4 lg:inline-block lg:text-right lg:mt-0 lg:mb-2 py-2 text-[#000000] hover:text-[#81817C] mr-6 cursor-pointer`,
+  // headerItem: `block mt-4 lg:inline-block lg:text-right lg:mt-0 lg:mb-2 py-2 text-[#000000] hover:text-[#81817C] mr-6 cursor-pointer `,
   headerIcon: `block lg:inline-block lg:mt-0 text-[#000000]  text-3xl hover:text-[#81817C] mr-4 cursor-pointer focus:outline-none`,
   img: `fill-current h-8 w-8 mr-2`,
   info: `flex justify-between text-[#e4e8eb] drop-shadow-xl`,
@@ -112,11 +112,11 @@ const Header = () => {
   // }
 
   return (
-    <nav className="flex flex-wrap items-center justify-between bg-[#9445eb] px-2">
+    <nav className="flex flex-wrap items-center justify-between bg-lime-50 px-2">
       <Link href="/">
         <div className="mr-6 flex flex-shrink-0 items-center text-white">
           {/* <Image className={style.img} src={logo} height={40} width={40} /> */}
-          <div className={style.logoText}>Mixer</div>
+          <div className={style.logoText}>MIXER</div>
         </div>
       </Link>
       <div className="block lg:hidden">
