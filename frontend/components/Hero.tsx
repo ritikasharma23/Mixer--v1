@@ -269,7 +269,7 @@ const Pay = () => {
                     <div className="font-bold drop-shadow-xl">
                       <div className={style.info}>
                         <div className={style.infoLeft}>
-                          <div className="mt-4 mb-2 text-sm font-bold text-[#000000] ">
+                          <div className="mt-4 mb-2 text-sm font-bold text-[#000000] ml-5">
                             Choose Cryptocurrency:
                           </div>
                         </div>
@@ -416,7 +416,7 @@ const Pay = () => {
                   <div className="font-bold drop-shadow-xl">
                     <div className={style.info}>
                       <div className={style.infoLeft}>
-                        <div className="mt-4 mb-2 text-sm font-bold text-[#000000] text-center">
+                        <div className="mt-4 mb-2 ml-20 text-sm font-bold text-[#000000]">
                           Choose Cryptocurrency:
                         </div>
                       </div>

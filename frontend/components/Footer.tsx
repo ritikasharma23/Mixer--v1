@@ -18,7 +18,7 @@ const Footer = () => {
         <div className="flex items-center justify-center border-b border-black-300 p-6 lg:justify-between">
           <div className="mr-12 hidden lg:block">
             
-            <span className="flex justify-center mr-8 font-bold">Connect with us on Social Networks</span>
+            <span className="flex justify-center mr-8 font-bold text-xl">Connect with us on Social Networks</span>
           </div>
           <div className="flex justify-center mr-6 font-bold">
             <a href="#" className="mr-6 text-black-600">
