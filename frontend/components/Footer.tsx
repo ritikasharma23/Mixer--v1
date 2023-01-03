@@ -106,9 +106,9 @@ const Footer = () => {
           </div>
         </div>
     
-        <div className="bg-black p-6 text-center text-white">
+        <div className="bg-7A9A1F p-6 text-center text-black">
           <span>© 2022 Copyright: </span>
-          <a className="text-white	">
+          <a className="text-black	">
           A product from EvoFinance
           </a>
         </div>
