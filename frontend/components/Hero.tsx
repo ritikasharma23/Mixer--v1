@@ -33,6 +33,7 @@ const style = {
 
 const defaults = {
   balanceToken: "0",
+  padding-right:"2 px",
 };
 
 const Pay = () => {
